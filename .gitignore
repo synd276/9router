@@ -72,3 +72,9 @@ ecosystem.config.*
 scripts/agSniffer/*
 gitbooks/*
 gitbook/README.md
+
+# cloudflare / opennext
+.open-next/
+.wrangler/
+cloudflare-env.d.ts
+

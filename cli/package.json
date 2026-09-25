@@ -1,9 +1,9 @@
 {
-  "name": "ai-router-proxy",
+  "name": "9router",
   "version": "0.4.71",
-  "description": "AI Router Proxy - Start and manage AI Router Proxy server",
+  "description": "9Router CLI - Start and manage 9Router server",
   "bin": {
-    "ai-router-proxy": "./cli.js"
+    "9router": "./cli.js"
   },
   "files": [
     "cli.js",
@@ -34,7 +34,7 @@
     "node": ">=18.0.0"
   },
   "keywords": [
-    "ai-router-proxy",
+    "9router",
     "cli",
     "proxy",
     "ai",

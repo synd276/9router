@@ -10,10 +10,15 @@ function loadJwtSecret() {
   try {
     return fs.readFileSync(file, "utf8").trim();
   } catch {}
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  const generated = crypto.randomBytes(32).toString("hex");
-  fs.writeFileSync(file, generated, { mode: 0o600 });
-  return generated;
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const generated = crypto.randomBytes(32).toString("hex");
+    fs.writeFileSync(file, generated, { mode: 0o600 });
+    return generated;
+  } catch {
+    // Read-only filesystem (e.g. Cloudflare Workers edge runtime)
+    return crypto.randomBytes(32).toString("hex");
+  }
 }
 
 const SECRET = new TextEncoder().encode(loadJwtSecret());
