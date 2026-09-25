@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack --port 20128",
-    "build": "next build --webpack",
+    "build": "opennextjs-cloudflare build",
+    "build:next": "next build --webpack",
     "start": "next start",
     "build:worker": "opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
