@@ -18,7 +18,7 @@ async function tryBunSqlite() {
 
 async function tryBetterSqlite() {
   // Skip on Bun — better-sqlite3 native bindings unsupported
-  if (process.versions.bun) return null;
+  if (process.versions?.bun) return null;
   try {
     const { createBetterSqliteAdapter } = await import("./adapters/betterSqliteAdapter.js");
     return createBetterSqliteAdapter(DATA_FILE);
@@ -30,8 +30,10 @@ async function tryBetterSqlite() {
 
 async function tryNodeSqlite() {
   // Built-in since Node 22.5.0 — no install needed. Skip under Bun (no node:sqlite).
-  if (process.versions.bun) return null;
-  const [maj, min] = process.versions.node.split(".").map(Number);
+  if (process.versions?.bun) return null;
+  const nodeVer = process.versions?.node;
+  if (!nodeVer) return null;
+  const [maj, min] = nodeVer.split(".").map(Number);
   if (maj < 22 || (maj === 22 && min < 5)) return null;
   try {
     const { createNodeSqliteAdapter } = await import("./adapters/nodeSqliteAdapter.js");

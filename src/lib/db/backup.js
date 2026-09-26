@@ -10,7 +10,9 @@ export function makeBackupDir(label) {
   const ver = getAppVersion();
   const slug = `${label}-${ver}-${timestampSlug()}`;
   const dir = path.join(BACKUPS_DIR, slug);
-  fs.mkdirSync(dir, { recursive: true });
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+  } catch {}
   return dir;
 }
 
