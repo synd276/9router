@@ -29,7 +29,9 @@ import { syncToJson as syncMitmAliasCache } from "@/lib/mitmAliasCache";
   try { initDbHooks(getSettings, updateSettings); } catch { /* ignore */ }
 })();
 
-process.setMaxListeners(20);
+if (typeof process !== "undefined" && typeof process.setMaxListeners === "function") {
+  try { process.setMaxListeners(20); } catch { /* ignore */ }
+}
 
 // Survive Next.js hot reload
 const g = global.__appSingleton ??= {
@@ -45,6 +47,12 @@ const g = global.__appSingleton ??= {
 };
 
 export async function initializeApp() {
+  const isCloudflare =
+    typeof WebSocketPair !== "undefined" ||
+    (typeof navigator !== "undefined" && navigator?.userAgent === "Cloudflare-Workers") ||
+    process.env.OPENNEXT_CLOUDFLARE === "1";
+  if (isCloudflare) return;
+
   try {
     await cleanupProviderConnections();
     const settings = await getSettings();

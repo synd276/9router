@@ -1,13 +1,16 @@
-import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { DATA_DIR } from '@/lib/dataDir';
 
-const req = createRequire(import.meta.url);
-
 function getNativeMachineId() {
   try {
+    // Lazy import to avoid crashes on runtimes without node:module (e.g. Cloudflare Workers).
+    // Use Function() to hide the require from static analysis / webpack bundling.
+    const _require = typeof require !== 'undefined' ? require : null;
+    if (!_require) return crypto.randomUUID();
+    const { createRequire } = _require('module');
+    const req = createRequire(import.meta.url);
     const { machineIdSync } = req('node-machine-id');
     return machineIdSync();
   } catch {

@@ -4,6 +4,15 @@ import { ensureDirs, DATA_FILE } from "./paths.js";
 if (!global._dbAdapter) global._dbAdapter = { instance: null, initPromise: null, logged: false };
 const state = global._dbAdapter;
 
+function isCloudflareWorker() {
+  try {
+    if (typeof WebSocketPair !== "undefined") return true;
+    if (typeof navigator !== "undefined" && navigator?.userAgent === "Cloudflare-Workers") return true;
+    if (process.env.OPENNEXT_CLOUDFLARE === "1") return true;
+  } catch {}
+  return false;
+}
+
 async function tryBunSqlite() {
   // Bun runtime only — built-in, no install needed
   if (!process.versions.bun) return null;
@@ -54,16 +63,42 @@ async function trySqlJs() {
   }
 }
 
+async function tryMemory() {
+  try {
+    const { createMemoryAdapter } = await import("./adapters/memoryAdapter.js");
+    return createMemoryAdapter();
+  } catch (e) {
+    console.warn(`[DB] memory adapter unavailable: ${e.message}`);
+    return null;
+  }
+}
+
 async function initAdapter() {
+  const isCf = isCloudflareWorker();
+
+  // In Cloudflare Workers, skip file-system drivers entirely → use in-memory
+  if (isCf) {
+    const adapter = await tryMemory();
+    if (!adapter) throw new Error("[DB] No driver available in Cloudflare Workers");
+    if (!state.logged) {
+      console.log(`[DB] Driver: ${adapter.driver} (Cloudflare Workers — in-memory)`);
+      state.logged = true;
+    }
+    // Run schema bootstrap (memory adapter handles PRAGMA/CREATE TABLE as no-ops,
+    // but tables are already pre-initialized from TABLES in memoryAdapter.js)
+    return adapter;
+  }
+
   ensureDirs();
   // Order per runtime:
   //   Bun:  bun:sqlite → sql.js
-  //   Node: better-sqlite3 → node:sqlite (≥22.5) → sql.js
+  //   Node: better-sqlite3 → node:sqlite (≥22.5) → sql.js → memory (last resort)
   let adapter = await tryBunSqlite();
   if (!adapter) adapter = await tryBetterSqlite();
   if (!adapter) adapter = await tryNodeSqlite();
   if (!adapter) adapter = await trySqlJs();
-  if (!adapter) throw new Error("[DB] No SQLite driver available (bun/better/node/sql.js all failed)");
+  if (!adapter) adapter = await tryMemory();
+  if (!adapter) throw new Error("[DB] No SQLite driver available (bun/better/node/sql.js/memory all failed)");
 
   if (!state.logged) {
     console.log(`[DB] Driver: ${adapter.driver} | file: ${DATA_FILE}`);
